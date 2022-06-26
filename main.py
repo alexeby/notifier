@@ -1,4 +1,5 @@
 import configparser
+import os
 
 import requests as r
 import json
@@ -27,6 +28,16 @@ log.addHandler(stdout_handler)
 
 url = "https://www.amctheatres.com/movies?availability=COMING_SOON"
 
+# Create config file
+if not os.path.exists('conf.ini'):
+    log.error('conf.ini file does not exist')
+    with open('conf.ini', 'x') as f:
+        f.write('''[email]
+sender=
+password=
+emails=
+''')
+    exit(0)
 
 config = configparser.ConfigParser()
 config.read('conf.ini')
