@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 from typing import List
 
-from notifier.emailer import Emailer
+from emailer import Emailer
 
 log = logging.getLogger()
 log.setLevel(logging.INFO)
@@ -50,8 +50,10 @@ email_to = config['email']['emails'].split(',')
 def get_save_data():
     data = {}
     try:
-        f = open('save.json', 'r')
-        data = json.load(f)
+        with open('save.json', 'r') as f:
+            contents = f.read()
+            if contents != '':
+                data = json.loads(contents)
     except FileNotFoundError as fnfe:
         log.warning(fnfe)
     except json.decoder.JSONDecodeError as jde:
