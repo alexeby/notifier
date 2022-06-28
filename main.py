@@ -118,14 +118,13 @@ def get_updated_data(save_data: dict, web_data: dict):
             movies += f'<a href=\'https://www.amctheatres.com/movies/{id}\'>{title}</a><br><br>'
         email = f'''<!DOCTYPE html>
             <html lang="en">
-                <b>The following movies now have tickets available:<b><br><br>
-                
                 {movies}
             </html>
             '''
 
         e: Emailer = Emailer(email_sender, email_password)
-        e.send_email(email_to, 'New Movies Available', email)
+        now = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        e.send_email(email_to, f'{len(new_movies)} New Movie{"s" if len(new_movies) > 1 else ""} Available - {now}', email)
 
     return data
 
