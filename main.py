@@ -5,6 +5,7 @@ import requests as r
 import json
 from bs4 import BeautifulSoup
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 from datetime import datetime
 from typing import List
@@ -16,11 +17,11 @@ log.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', '%m-%d-%Y %H:%M:%S')
 
 stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setLevel(logging.INFO)
 stdout_handler.setFormatter(formatter)
 
-file_handler = logging.FileHandler('movie_notifier.log')
-file_handler.setLevel(logging.DEBUG)
+file_handler = RotatingFileHandler('movie_notifier.log', mode='a', maxBytes=1024**2)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 
 log.addHandler(file_handler)
@@ -82,14 +83,21 @@ def get_web_data():
             m_data = {}
             id = m.select_one('a').get('href').split('-')[-1]
             m_data['title'] = m.select_one('.PosterContent h3').contents.pop()
-            m_data['status'] = None if does_element_exist(m, '.PosterContent button span') else m.select_one(
-                '.PosterContent div .Btn').contents.pop()
+            status = None
+            if not does_element_exist(m, '.PosterContent button span'):
+                select = m.select_one('.PosterContent div .Btn')
+                if select is not None:
+                    status = select.contents.pop()
+            m_data['status'] = status
             m_data['last_update'] = str(datetime.now())
             m_data['id'] = id
             data[id] = m_data
 
-    except AttributeError as ae:
-        log.error(ae)
+    except Exception as ex:
+        log.error(ex)
+        e: Emailer = Emailer(email_sender, email_password)
+        now = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        e.send_email(email_to, 'Movie Notifier Failed', f'{now} \n\n Movie notifier failed because of exception:\n {ex}')
 
     return data
 
@@ -135,7 +143,7 @@ def write_data(data: dict):
 
 
 if __name__ == '__main__':
-    log.info('Starting Movie Notifier')
+    log.debug('Starting Movie Notifier')
     wd = get_web_data()
     sd = get_save_data()
     updated_data = get_updated_data(sd, wd)
